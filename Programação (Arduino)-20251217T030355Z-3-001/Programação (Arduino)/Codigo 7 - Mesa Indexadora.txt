@@ -1,0 +1,350 @@
+#include <Arduino.h>
+
+// ======================================================
+//                    MESA INDEXADORA 
+// ======================================================
+
+// ================================
+//       SENSORES IND + CAP 
+// ================================
+#define SENIND1 66
+#define SENIND2 67
+#define SENC1   68
+#define SENC2   69
+
+// ================================
+//               LEDS
+// ================================
+#define LED1 34
+#define LED2 36
+#define LED3 38
+#define LED4 40
+
+// ================================
+//         SOLENOIDE 
+// ================================
+#define CARGA    41
+#define TRIGGER  39
+
+// ================================
+//             MOTOR
+// ================================
+#define STEP_PIN   37
+#define DIR_PIN    35
+#define PASSOS_POR_POSICAO 1333
+#define VELOCIDADE_US 800
+
+// ================================
+//     BOTÃO DE PASSO MANUAL
+// ================================
+#define BOTAO_PASSO 33   // botão ligado entre pino e GND (INPUT_PULLUP)
+
+// ================================
+//           VARIÁVEIS
+// ================================
+bool pecas[6] = {0,0,0,0,0,0};
+bool mesaLigada = false;
+bool cicloAtivo = false;
+
+unsigned long marcaTempo = 0;
+const unsigned long tempoEtapa = 4000;
+
+int v15 = 0, v16 = 0, v17 = 0, v18 = 0;
+
+// debounce botão
+unsigned long lastDebounceTime = 0;
+const unsigned long debounceDelay = 50; // ms
+int lastButtonState = HIGH;
+int buttonState = HIGH;
+
+// forward declarations
+void desligarTudo();
+bool detectarPecaEntrada();
+void ligarMesa();
+void cicloIndexador();
+void leituraMaterial(int idx);
+void expulsarPeca();
+void finalizarCiclo();
+void moverPosicao();
+void moverEtapa(int pos);
+void exibirStatus();
+void IHM();
+void testePassoManual();
+
+// ======================================================
+//                     SETUP
+// ======================================================
+void setup() {
+  Serial.begin(9600);
+  delay(50);
+
+  pinMode(SENIND1, INPUT);
+  pinMode(SENIND2, INPUT);
+  pinMode(SENC1, INPUT);
+  pinMode(SENC2, INPUT);
+  pinMode(33, INPUT_PULLUP);
+
+  pinMode(LED1,OUTPUT);
+  pinMode(LED2,OUTPUT);
+  pinMode(LED3,OUTPUT);
+  pinMode(LED4,OUTPUT);
+
+  pinMode(CARGA,OUTPUT);
+  pinMode(TRIGGER,OUTPUT);
+
+  pinMode(STEP_PIN,OUTPUT);
+  pinMode(DIR_PIN,OUTPUT);
+
+  pinMode(BOTAO_PASSO, INPUT_PULLUP);
+
+  desligarTudo();
+  Serial.println("==== SISTEMA PRONTO ====");
+  Serial.println("Observação: selecione a placa correta (ex: ESP32) se estiver usando pinos altos.");
+}
+
+// ======================================================
+//                        LOOP
+// ======================================================
+void loop(){  
+
+  testePassoManual();   // checa botão e faz passo manual
+
+  IHM();
+
+  if(!mesaLigada && detectarPecaEntrada()){
+      ligarMesa();
+  }
+
+  if(mesaLigada && cicloAtivo){
+      cicloIndexador();
+  }
+}
+
+// ======================================================
+//      FUNÇÃO DO BOTÃO DE PASSO MANUAL (COM DEBOUNCE)
+// ======================================================
+void testePassoManual() {
+  int leitura = digitalRead(BOTAO_PASSO);
+
+  if (leitura != lastButtonState) {
+    lastDebounceTime = millis();
+  }
+
+  if ((millis() - lastDebounceTime) > debounceDelay) {
+    if (leitura != buttonState) {
+      buttonState = leitura;
+      if (buttonState == LOW) { // botão pressionado (com INPUT_PULLUP)
+        // garante que DIR_PIN esteja definido (ex: HIGH para avançar)
+        digitalWrite(DIR_PIN, HIGH);
+        // executa um passo (um pulso STEP)
+        digitalWrite(STEP_PIN, HIGH);
+        delayMicroseconds(VELOCIDADE_US);
+        digitalWrite(STEP_PIN, LOW);
+        delayMicroseconds(VELOCIDADE_US);
+        Serial.println("➡ Passo manual executado (botao)");
+      }
+    }
+  }
+
+  lastButtonState = leitura;
+}
+
+// ======================================================
+//              DETECTA PEÇA NA ENTRADA
+// ======================================================
+bool detectarPecaEntrada(){
+  // ajuste conforme lógica dos seus sensores (PNP/NPN)
+  return (/*digitalRead(SENIND1)==0 || digitalRead(SENC1)== ||*/ !digitalRead(33));
+}
+
+// ======================================================
+//                   LIGAR MESA
+// ======================================================
+void ligarMesa(){
+  mesaLigada = true;
+  cicloAtivo = true;
+  Serial.println("\n🔥 Sistema iniciado — peça detectada na entrada");
+
+  //moverPosicao();      // move a peça da posição 1 
+  pecas[0] = 1;         // registra peça
+  exibirStatus();
+}
+
+// ======================================================
+//               CICLO COMPLETO DO PROCESSO
+// ======================================================
+void cicloIndexador(){
+  static int etapa = 0;
+
+  if(millis()-marcaTempo < tempoEtapa) return;
+  marcaTempo = millis();
+
+  switch(etapa){
+    case 0:
+      moverEtapa(1); 
+      Serial.println(etapa);
+      
+      break; // posição 2
+    case 1:
+      moverEtapa(2); 
+      Serial.println(etapa);
+      break; // posição 3
+    case 2:
+      moverEtapa(3); 
+      leituraMaterial(3); 
+      Serial.println(etapa);
+      break;
+    case 3:
+      moverEtapa(4); 
+      leituraMaterial(4);
+      Serial.println(etapa);
+      break;
+    case 4:
+      moverEtapa(5); 
+      expulsarPeca();  
+      finalizarCiclo(); 
+      Serial.println(etapa);
+      etapa = 0;   // reset da etapa para próximo ciclo
+      return;
+    default:
+      etapa=0; 
+      return;
+  }
+
+  etapa++;
+}
+
+// ======================================================
+//         LEITURA DOS TIPOS DE MATERIAL
+// ======================================================
+void leituraMaterial(int idx){
+  bool metal = (digitalRead(SENIND2) == HIGH);
+  bool plast = (digitalRead(SENC2) == HIGH);
+
+  if(metal) {
+    pecas[idx] = 1;
+    Serial.println("→ Material: METÁLICO");
+  }
+  else if(plast){
+    pecas[idx] = 2;
+    Serial.println("→ Material: NÃO METÁLICO");
+  }
+  else Serial.println("→ Sem leitura válida...");
+}
+
+// ======================================================
+//                EXPULSÃO FINAL
+// ======================================================
+void expulsarPeca(){
+  Serial.println("⚠ Expulsando peça...");
+
+  digitalWrite(CARGA,HIGH); 
+  delay(300);
+  
+  digitalWrite(CARGA,LOW);  
+  delay(200);
+  
+  digitalWrite(TRIGGER,HIGH);
+  delay(200);
+  
+  digitalWrite(TRIGGER,LOW);
+
+  pecas[5]=0;
+}
+
+// ======================================================
+//                   FINALIZAR CICLO
+// ======================================================
+void finalizarCiclo(){
+  Serial.println("\n✔ Ciclo completo. Sistema aguardando nova peça.");
+  cicloAtivo=false;
+  mesaLigada=false;
+  desligarTudo();
+}
+
+// ======================================================
+//                   MOTOR — 1 POSIÇÃO
+// ======================================================
+void moverPosicao(){
+  digitalWrite(DIR_PIN,LOW);
+  for(int i=0;i<PASSOS_POR_POSICAO;i++){
+    digitalWrite(STEP_PIN,HIGH); delayMicroseconds(VELOCIDADE_US);
+    digitalWrite(STEP_PIN,LOW);  delayMicroseconds(VELOCIDADE_US);
+  }
+}
+
+// desloca vetor de posição
+void moverEtapa(int pos){
+  moverPosicao();
+  for(int i=5;i>0;i--) pecas[i] = pecas[i-1];
+  pecas[0]=0;
+  Serial.print("\n➡ Mesa avançou para posição ");
+  Serial.println(pos+1);
+  exibirStatus();
+}
+
+// ======================================================
+//              MOSTRAR STATUS NO SERIAL
+// ======================================================
+void exibirStatus(){
+  Serial.print("Estado da mesa: ");
+  for(int i=0;i<6;i++){ Serial.print(pecas[i]); Serial.print(" "); }
+  Serial.println();
+}
+
+// ======================================================
+//                       IHM
+// ======================================================
+void IHM() {
+  v15 = digitalRead(SENIND1);
+  v16 = digitalRead(SENIND2);
+  v17 = digitalRead(SENC1);
+  v18 = digitalRead(SENC2);
+
+  if (v15 != 1 && v16 == 1 && v17 == 0 && v18 == 0) {
+    digitalWrite(LED1, LOW);
+    digitalWrite(LED2, HIGH);
+    digitalWrite(LED3, HIGH);
+    digitalWrite(LED4, HIGH);
+  } else if (v15 == 1 && v16 != 1 && v17 == 0 && v18 == 0) {
+    digitalWrite(LED1, HIGH);
+    digitalWrite(LED2, LOW);
+    digitalWrite(LED3, HIGH);
+    digitalWrite(LED4, HIGH);
+  } else if (v15 == 1 && v16 == 1 && v17 != 0 && v18 == 0) {
+    digitalWrite(LED1, HIGH);
+    digitalWrite(LED2, HIGH);
+    digitalWrite(LED3, LOW);
+    digitalWrite(LED4, HIGH);
+  } else if (v15 == 1 && v16 == 1 && v17 == 0 && v18 != 0) {
+    digitalWrite(LED1, HIGH);
+    digitalWrite(LED2, HIGH);
+    digitalWrite(LED3, HIGH);
+    digitalWrite(LED4, LOW);
+  } else {
+    digitalWrite(LED1, HIGH);
+    digitalWrite(LED2, HIGH);
+    digitalWrite(LED3, HIGH);
+    digitalWrite(LED4, HIGH);
+  }
+}
+
+// ======================================================
+//             RESET EM TODAS SAIDAS/LEDS
+// ======================================================
+void desligarTudo(){
+  digitalWrite(CARGA,LOW);
+  digitalWrite(TRIGGER,LOW);
+  digitalWrite(LED1,HIGH);
+  digitalWrite(LED2,HIGH);
+  digitalWrite(LED3,HIGH);
+  digitalWrite(LED4,HIGH);
+}
+
+// ======================================================
+//           MÓDULOS EM BRANCO PARA UPGRADES FUTUROS
+// ======================================================
+void moduloExtra1() {}
+void moduloExtra2() {}
+void moduloExtra3() {}
+void moduloExtra4() {}
