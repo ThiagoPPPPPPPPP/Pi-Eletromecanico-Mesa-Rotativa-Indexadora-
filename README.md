@@ -2,7 +2,7 @@
 
 Este repositório contém a documentação e os arquivos de projeto da **Mesa Giratória Indexadora**, um módulo de ensino desenvolvido para auxiliar na formação prática de alunos sobre integração de sistemas automatizados.
 
-O projeto integra mecânica, eletrônica e programação para simular um processo industrial de indexação, detecção e separação de peças.
+O projeto integra mecânica, eletrônica e programação para simular um processo industrial de indexação, detecção,  separação de peças ou possíveis operações em peças já catalogadas.
 
 ---
 
