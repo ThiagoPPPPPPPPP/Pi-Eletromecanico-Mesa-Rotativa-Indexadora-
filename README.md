@@ -71,7 +71,7 @@ O firmware foi desenvolvido em **C++ (Arduino)** e implementa uma máquina de es
 ### Instalação
 1.  Clone este repositório:
     ```bash
-    git clone [https://github.com/seu-usuario/mesa-giratoria-indexadora.git](https://github.com/ThiagoPPPPPPPPP/mesa-giratoria-indexadora.git)
+    git clone [https://github.com/ThiagoPPPPPPPPP/Pi-Eletromecanico-Mesa-Rotativa-Indexadora-.git](https://github.com/ThiagoPPPPPPPPP/Pi-Eletromecanico-Mesa-Rotativa-Indexadora-.git)
     ```
 2.  Abra o arquivo principal do código (ex: `Mesa_Indexadora.ino`) na Arduino IDE.
 3.  Conecte o Arduino Mega via USB.
