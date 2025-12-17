@@ -73,12 +73,12 @@ O firmware foi desenvolvido em **C++ (Arduino)** e implementa uma máquina de es
     ```bash
     git clone [https://github.com/seu-usuario/mesa-giratoria-indexadora.git](https://github.com/seu-usuario/mesa-giratoria-indexadora.git)
     ```
-2.  Abra o arquivo principal do código (ex: `main.ino`) na Arduino IDE.
+2.  Abra o arquivo principal do código (ex: `Mesa_Indexadora.ino`) na Arduino IDE.
 3.  Conecte o Arduino Mega via USB.
 4.  Selecione a placa **Arduino Mega or Mega 2560** no menu de ferramentas.
 5.  Faça o upload do código.
 
-> **Nota:** Consulte o arquivo `Manual de Montagem.pdf` (se disponível nos arquivos) para o passo a passo da montagem mecânica e o esquema elétrico detalhado.
+> **Nota:** Consulte o arquivo `Manual de Montagem.pdf` para o passo a passo da montagem mecânica e o esquema elétrico detalhado no arquivo do relatório.
 
 ---
 
