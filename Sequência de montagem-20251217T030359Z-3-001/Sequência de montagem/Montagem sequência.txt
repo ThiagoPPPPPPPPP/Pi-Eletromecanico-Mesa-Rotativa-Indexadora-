@@ -1,0 +1,65 @@
+Caixa componentes:
+
+-Fundo_parafusado;
+-Lateral_cooler_parafusado;
+-Lateral parafusado;
+-Frente-Back_parafusado;
+-Frente-Back_parafusado_fonte;
+-Top_parafusado;
+-1 andar;
+-Placa de controle;
+-TB-6600;
+-8 cantoneiras;
+-Fonte 24V;
+-Cooler;
+
+Mesa componentes:
+
+-Mesa inteira
+-6 Ressalto Peça;
+-Motor de passo;
+-Luva(mancal);
+-Rolamento;
+-2 Sensores indutivos;
+-Suporte eixo;
+-Eixo;
+-Solenoide
+-Eng interna M1.125 D150;
+-Pinhão m1.125 D30;
+-Suporte solenoide com viga v2.step;
+
+Montagem:
+
+-Parte inferior:
+1_ 4 cantoneiras entre parte media e base inferior;
+2_ 20 parasusos M4 (4 para fixar Fundo_parafusado e cantoneira, 16 para fixar cantoneira e faces laterais);
+3_ Fonte 24V;
+4_ 2 parafusos diâmetro 4.2mm para fixar Fonte 24V na parte Frente-Back_parafusado_fonte;
+5_ Cooler;
+6_ 4 parafusos diâmetro 4.2mm para fixar Cooler na parte Lateral_cooler_parafusado;
+
+-Parte média:
+1_ 2 parafusos M4 para fixar cantoneira inferior->1 andar->cantoneira superior;
+2_ 4 cantoneiras entre parte media e parte superior;
+3_ 16 parafusos M4 para fixar cantoneiras as faces laterais ;
+4_ Placa de controle;
+5_ TB-6600;
+6_ Eixo
+7_ Suporte Eixo
+8_ 4 parafusos M4 para fixar Suporte Eixo em 1 andar;
+
+Mesa semi-completa:
+
+1_ 12 parafusos M4 para fixar 6 ressalto peça em Mesa inteira;
+2_ Rolamento
+3_ 6 parafusos M4 para fixar Luva(mancal) em Mesa inteira;
+4_ 6 parafusos M3 para fixar Eng interna M1.125 D150 em Mesa inteira;
+
+-Parte superior:
+1_ 2 parafusos M4 para fixar cantoneira superior->Top_parafusado;
+2_ 2 sensores capacitivo (fixar no Top_parafusado pela porca do sensor com a furação da mesa);
+3_ Motor de passo;
+4_ Posicionar Suporte solenoide com viga v2.step no Eixo;
+5_ 4 parafusos M3 para fixar Motor de passo no Top_parafusado;
+6_ Posicionar Eng interna M1.125 D150 com pinhão m1.125 D30
+7_ Posicionar Mesa inteira no Eixo;
